@@ -68,10 +68,9 @@
         },
         "swap_x": {
             "type": "cross",
-            "size": 6,
+            "size": 8,
             "stroke": "#222222",
-            "stroke_width": 1,
-            "style": "wave"
+            "stroke_width": 2
         }
     },
     "gates": {
@@ -95,7 +94,7 @@
             "parametric_mode": "arc",
             "arc_stroke": "#ff5555",
             "arc_stroke_width": 3,
-            "arc_radius": 14,
+            "arc_radius": 18,
             "label": "Rx",
             "fill": "#ffe0e0"
         },
@@ -103,7 +102,7 @@
             "parametric_mode": "arc",
             "arc_stroke": "#55ff55",
             "arc_stroke_width": 3,
-            "arc_radius": 14,
+            "arc_radius": 18,
             "label": "Ry",
             "fill": "#e0ffe0"
         },
@@ -111,7 +110,7 @@
             "parametric_mode": "arc",
             "arc_stroke": "#5555ff",
             "arc_stroke_width": 3,
-            "arc_radius": 14,
+            "arc_radius": 18,
             "label": "Rz",
             "fill": "#e0e0ff"
         },
@@ -119,7 +118,7 @@
             "parametric_mode": "arc",
             "arc_stroke": "#f1fa8c",
             "arc_stroke_width": 3,
-            "arc_radius": 14,
+            "arc_radius": 18,
             "label": "P",
             "fill": "#fdfdfb"
         },
