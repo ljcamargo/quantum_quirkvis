@@ -24,6 +24,6 @@ rz(pi) q[2];
 
 barrier q;
 
-c[0] = measure q[0];
+measure q[0];
 measure q[1];
 measure q[2];

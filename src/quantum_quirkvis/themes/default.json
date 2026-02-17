@@ -31,6 +31,12 @@
             "amplitude": 3,
             "wavelength": 12
         },
+        "measurement_line": {
+            "style": "straight",
+            "stroke": "#777777",
+            "stroke_width": 1,
+            "dasharray": "2,2"
+        },
         "barrier": {
             "style": "straight",
             "stroke": "gray",

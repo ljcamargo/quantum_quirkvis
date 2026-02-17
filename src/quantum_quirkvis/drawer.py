@@ -49,7 +49,12 @@ class SVGDrawer:
         # Draw labels
         text_color = self.theme_manager.get_style('text')
         label_font = self.theme_manager.get_style('label_font')
-        for (reg_name, reg_idx), line_idx in line_nums.items():
+        drawn_lines = set()
+        # Sort items to ensure consistent label choice (e.g. prefer non-indexed for single bit)
+        for (reg_name, reg_idx), line_idx in sorted(line_nums.items(), key=lambda x: x[0][1]):
+            if line_idx in drawn_lines: continue
+            drawn_lines.add(line_idx)
+            
             y = padding + line_idx * line_spacing
             label = f"{reg_name}[{reg_idx}]" if reg_idx != -1 else reg_name
             text = ET.SubElement(svg, 'text', {
@@ -177,6 +182,15 @@ class SVGDrawer:
             gate_label = config['text']
             
         self._draw_shape(svg, x, y, config, label=gate_label)
+        
+        # Draw connection to classical target
+        if stmt.target:
+            target_key = self._identifier_to_key(stmt.target)
+            if target_key in line_nums:
+                target_idx = line_nums[target_key]
+                y_target = padding + target_idx * line_spacing
+                conn_config = self.theme_manager.get_style('measurement_line')
+                self._draw_line(svg, x, y, x, y_target, conn_config)
 
     def _draw_barrier(self, svg, stmt, x, line_nums):
         padding = self.theme_manager.get_dimension('padding')
@@ -396,6 +410,11 @@ class SVGDrawer:
             elif isinstance(statement, ast.QuantumMeasurementStatement):
                 key = self._identifier_to_key(statement.measure.qubit)
                 depth = 1 + depths[key]
+                if statement.target:
+                    target_key = self._identifier_to_key(statement.target)
+                    if target_key in depths:
+                        depth = 1 + max(depths[key], depths[target_key])
+                        depths[target_key] = depth
                 depths[key] = depth
             else:
                 # Skip other statements for now
@@ -452,10 +471,20 @@ class SVGDrawer:
         # Classical registers second (at the bottom)
         for k in module._classical_registers:
             size = module._classical_registers[k]
-            # Pyqasm supports (name, -1) for classical registers in statements
-            line_nums[(k, -1)] = line_num
-            sizes[(k, -1)] = size
-            line_num += 1
+            indices = list(range(size))
+            if rev_c:
+                indices.reverse()
+            
+            if size == 1:
+                line_nums[(k, -1)] = line_num
+                line_nums[(k, 0)] = line_num # also map index 0 to same line
+                sizes[(k, -1)] = 1
+                line_num += 1
+            else:
+                for i in indices:
+                    line_nums[(k, i)] = line_num
+                    sizes[(k, i)] = 1
+                    line_num += 1
             
         return line_nums, sizes
 
