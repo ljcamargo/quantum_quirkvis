@@ -40,18 +40,35 @@ class ThemeManager:
         deep_merge(self.theme, data)
 
     def get_style(self, category, subkey=None):
-        style = self.theme.get("styles", {}).get(category, {})
-        if subkey and isinstance(style, dict):
-            return style.get(subkey)
+        style = self.theme.get("styles", {}).get(category)
+        if style is None:
+            raise KeyError(f"Style category '{category}' not found in theme.")
+        if subkey:
+            if not isinstance(style, dict):
+                raise TypeError(f"Style category '{category}' is not a dictionary.")
+            val = style.get(subkey)
+            if val is None:
+                raise KeyError(f"Subkey '{subkey}' not found in style category '{category}'.")
+            return val
         return style
 
     def get_dimension(self, key):
-        return self.theme.get("dimensions", {}).get(key)
+        val = self.theme.get("dimensions", {}).get(key)
+        if val is None:
+            raise KeyError(f"Dimension '{key}' not found in theme.")
+        return val
+
+    def get_shape_config(self, shape_name):
+        config = self.theme.get("shapes", {}).get(shape_name)
+        if config is None:
+            raise KeyError(f"Shape '{shape_name}' not found in theme.")
+        return config
 
     def get_gate_config(self, gate_name):
-        gate_config = self.theme.get("gates", {}).get(gate_name, {})
-        # Overlay with default box styles if not present
-        return {**self.theme["styles"].get("gate_box", {}), **gate_config}
+        # Gates use the base 'gate' shape config as their foundation
+        base_config = self.get_shape_config("gate")
+        gate_specific = self.theme.get("gates", {}).get(gate_name, {})
+        return {**base_config, **gate_specific}
 
     def get_substitution(self, gate_name):
         return self.theme.get("substitutions", {}).get(gate_name)

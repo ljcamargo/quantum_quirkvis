@@ -3,7 +3,7 @@ import glob
 from quantum_quirkvis import draw
 
 # Directories
-QASM_DIR = "tests/qasms"
+QASM_DIR = "tests/qasms_complex"
 THEME_DIR = "tests/themes"
 OUTPUT_DIR = "test_output"
 

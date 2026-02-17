@@ -16,25 +16,20 @@ class SVGDrawer:
         module.remove_includes()
         
         line_nums, sizes = self._compute_line_nums(module)
-        
-        # Adaptation of _compute_moments from pyqasm
-        statements = []
-        for s in module._statements:
-            # Filter declarations and only include QuantumStatement
-            statements.append(s)
-
+        statements = list(module._statements)
         moments, depths = self._compute_moments(statements, line_nums)
         
         n_lines = max(line_nums.values()) + 1 if line_nums else 0
         n_moments = len(moments)
         
+        # No fallbacks allowed, these will raise KeyError if missing in theme
         gate_width = self.theme_manager.get_dimension('gate_width')
         gate_spacing = self.theme_manager.get_dimension('gate_spacing')
         line_spacing = self.theme_manager.get_dimension('line_spacing')
         padding = self.theme_manager.get_dimension('padding')
         label_offset = self.theme_manager.get_dimension('label_offset')
         
-        width = padding * 2 + n_moments * (gate_width + gate_spacing) + label_offset * 2
+        width = padding * 2 + n_moments * (gate_width + gate_spacing) + label_offset * 1.5
         height = n_lines * line_spacing + 2 * padding
         
         svg = ET.Element('svg', {
@@ -61,25 +56,18 @@ class SVGDrawer:
                 'x': str(padding + label_offset - 10),
                 'y': str(y),
                 'fill': text_color,
-                'font-family': label_font.get('family', 'sans-serif'),
-                'font-size': str(label_font.get('size', 12)),
+                'font-family': label_font['family'],
+                'font-size': str(label_font['size']),
                 'text-anchor': 'end',
                 'dominant-baseline': 'middle'
             })
             text.text = label
 
-        # Draw wires
-        wire_color = self.theme_manager.get_style('wire')
+        # Draw wires (Stave)
+        wire_config = self.theme_manager.get_style('qubit_wire')
         for q, line_idx in line_nums.items():
             y = padding + line_idx * line_spacing
-            ET.SubElement(svg, 'line', {
-                'x1': str(padding + label_offset),
-                'y1': str(y),
-                'x2': str(width - padding),
-                'y2': str(y),
-                'stroke': wire_color,
-                'stroke-width': '1'
-            })
+            self._draw_line(svg, padding + label_offset, y, width - padding, y, wire_config)
 
         # Draw moments
         x = padding + label_offset + gate_width/2
@@ -104,7 +92,6 @@ class SVGDrawer:
         qubits = [self._identifier_to_key(q) for q in gate.qubits]
         lines = [line_nums[q] for q in qubits]
         
-        # Check for substitution
         sub = self.theme_manager.get_substitution(name)
         config = self.theme_manager.get_gate_config(name)
         
@@ -120,177 +107,43 @@ class SVGDrawer:
 
         for line_idx in lines:
             y = padding + line_idx * line_spacing
-            
-            if sub and sub.get('type') == 'emoji':
-                self._draw_emoji(svg, x, y, sub.get('value'))
-            elif sub and sub.get('type') == 'image':
-                self._draw_image(svg, x, y, sub.get('value'))
-            elif sub and sub.get('type') == 'animation':
-                self._draw_animation(svg, x, y, name, config, sub.get('value'))
+            if sub:
+                self._draw_shape(svg, x, y, sub, label=config.get('label', name.upper()))
             else:
-                self._draw_box_gate(svg, x, y, name, config)
-
-    def _draw_emoji(self, svg, x, y, emoji):
-        text = ET.SubElement(svg, 'text', {
-            'x': str(x),
-            'y': str(y),
-            'font-size': '24',
-            'text-anchor': 'middle',
-            'dominant-baseline': 'middle'
-        })
-        text.text = emoji
-
-    def _draw_image(self, svg, x, y, url):
-        gate_width = self.theme_manager.get_dimension('gate_width')
-        gate_height = self.theme_manager.get_dimension('gate_height')
-        ET.SubElement(svg, 'image', {
-            'href': url,
-            'x': str(x - gate_width/2),
-            'y': str(y - gate_height/2),
-            'width': str(gate_width),
-            'height': str(gate_height)
-        })
-
-    def _draw_animation(self, svg, x, y, name, config, anim_type):
-        gate_width = self.theme_manager.get_dimension('gate_width')
-        gate_height = self.theme_manager.get_dimension('gate_height')
-        
-        fill = config.get('fill')
-        stroke = config.get('stroke')
-        radius = config.get('radius')
-        
-        rect_el = ET.SubElement(svg, 'rect', {
-            'x': str(x - gate_width/2),
-            'y': str(y - gate_height/2),
-            'width': str(gate_width),
-            'height': str(gate_height),
-            'fill': fill,
-            'stroke': stroke,
-            'rx': str(radius)
-        })
-        
-        if anim_type == 'pulse':
-            ET.SubElement(rect_el, 'animate', {
-                'attributeName': 'fill-opacity',
-                'values': '1;0.4;1',
-                'dur': '2s',
-                'repeatCount': 'indefinite'
-            })
-        
-        label = config.get('label', name.upper())
-        text_color = self.theme_manager.get_style('text')
-        txt = ET.SubElement(svg, 'text', {
-            'x': str(x),
-            'y': str(y),
-            'fill': text_color,
-            'font-family': 'sans-serif',
-            'font-size': '12',
-            'text-anchor': 'middle',
-            'dominant-baseline': 'middle'
-        })
-        txt.text = label
-
-    def _draw_box_gate(self, svg, x, y, name, config):
-        gate_width = self.theme_manager.get_dimension('gate_width')
-        gate_height = self.theme_manager.get_dimension('gate_height')
-        
-        fill = config.get('fill')
-        stroke = config.get('stroke')
-        radius = config.get('radius')
-        
-        ET.SubElement(svg, 'rect', {
-            'x': str(x - gate_width/2),
-            'y': str(y - gate_height/2),
-            'width': str(gate_width),
-            'height': str(gate_height),
-            'fill': fill,
-            'stroke': stroke,
-            'rx': str(radius)
-        })
-        
-        label = config.get('label', name.upper())
-        text_color = self.theme_manager.get_style('text')
-        txt = ET.SubElement(svg, 'text', {
-            'x': str(x),
-            'y': str(y),
-            'fill': text_color,
-            'font-family': 'sans-serif',
-            'font-size': '12',
-            'text-anchor': 'middle',
-            'dominant-baseline': 'middle'
-        })
-        txt.text = label
+                self._draw_shape(svg, x, y, config, label=config.get('label', name.upper()))
 
     def _draw_cx(self, svg, ctrl_line, target_line, x):
         padding = self.theme_manager.get_dimension('padding')
         line_spacing = self.theme_manager.get_dimension('line_spacing')
-        control_dot_radius = self.theme_manager.get_dimension('control_dot_radius')
-        target_plus_radius = self.theme_manager.get_dimension('target_plus_radius')
         
         y1 = padding + ctrl_line * line_spacing
         y2 = padding + target_line * line_spacing
-        wire_color = self.theme_manager.get_style('wire')
         
-        # Vertical line
-        ET.SubElement(svg, 'line', {
-            'x1': str(x),
-            'y1': str(y1),
-            'x2': str(x),
-            'y2': str(y2),
-            'stroke': wire_color,
-            'stroke-width': '1'
-        })
+        # Vertical connection line
+        conn_config = self.theme_manager.get_style('connection_line')
+        self._draw_line(svg, x, y1, x, y2, conn_config)
         
         # Control dot
-        ET.SubElement(svg, 'circle', {
-            'cx': str(x),
-            'cy': str(y1),
-            'r': str(control_dot_radius),
-            'fill': wire_color
-        })
+        dot_config = self.theme_manager.get_shape_config('control_dot')
+        self._draw_shape(svg, x, y1, dot_config)
         
         # Target plus
-        ET.SubElement(svg, 'circle', {
-            'cx': str(x),
-            'cy': str(y2),
-            'r': str(target_plus_radius),
-            'fill': 'none',
-            'stroke': wire_color,
-            'stroke-width': '1'
-        })
-        ET.SubElement(svg, 'line', {
-            'x1': str(x - target_plus_radius), 'y1': str(y2), 'x2': str(x + target_plus_radius), 'y2': str(y2),
-            'stroke': wire_color, 'stroke-width': '1'
-        })
-        ET.SubElement(svg, 'line', {
-            'x1': str(x), 'y1': str(y2 - target_plus_radius), 'x2': str(x), 'y2': str(y2 + target_plus_radius),
-            'stroke': wire_color, 'stroke-width': '1'
-        })
+        plus_config = self.theme_manager.get_shape_config('target_plus')
+        self._draw_shape(svg, x, y2, plus_config)
 
     def _draw_swap(self, svg, line1, line2, x):
         padding = self.theme_manager.get_dimension('padding')
         line_spacing = self.theme_manager.get_dimension('line_spacing')
-        swap_size = self.theme_manager.get_dimension('swap_size')
         
         y1 = padding + line1 * line_spacing
         y2 = padding + line2 * line_spacing
-        wire_color = self.theme_manager.get_style('wire')
         
-        ET.SubElement(svg, 'line', {
-            'x1': str(x), 'y1': str(y1), 'x2': str(x), 'y2': str(y2),
-            'stroke': wire_color, 'stroke-width': '1'
-        })
+        conn_config = self.theme_manager.get_style('connection_line')
+        self._draw_line(svg, x, y1, x, y2, conn_config)
         
+        cross_config = self.theme_manager.get_shape_config('swap_x')
         for y in [y1, y2]:
-            d = swap_size
-            ET.SubElement(svg, 'line', {
-                'x1': str(x - d), 'y1': str(y - d), 'x2': str(x + d), 'y2': str(y + d),
-                'stroke': wire_color, 'stroke-width': '1'
-            })
-            ET.SubElement(svg, 'line', {
-                'x1': str(x - d), 'y1': str(y + d), 'x2': str(x + d), 'y2': str(y - d),
-                'stroke': wire_color, 'stroke-width': '1'
-            })
+            self._draw_shape(svg, x, y, cross_config)
 
     def _draw_measurement(self, svg, stmt, x, line_nums):
         padding = self.theme_manager.get_dimension('padding')
@@ -301,12 +154,12 @@ class SVGDrawer:
         y = padding + line_idx * line_spacing
         
         config = self.theme_manager.get_gate_config('measurement')
-        self._draw_box_gate(svg, x, y, 'M', config)
+        self._draw_shape(svg, x, y, config, label=config.get('label', 'M'))
 
     def _draw_barrier(self, svg, stmt, x, line_nums):
         padding = self.theme_manager.get_dimension('padding')
         line_spacing = self.theme_manager.get_dimension('line_spacing')
-        barrier_style = self.theme_manager.get_style('barrier')
+        barrier_config = self.theme_manager.get_style('barrier')
         barrier_padding = self.theme_manager.get_dimension('barrier_padding')
         
         qubits = [self._identifier_to_key(q) for q in stmt.qubits]
@@ -316,12 +169,138 @@ class SVGDrawer:
         y_min = padding + min(lines) * line_spacing - barrier_padding
         y_max = padding + max(lines) * line_spacing + barrier_padding
         
-        ET.SubElement(svg, 'line', {
-            'x1': str(x), 'y1': str(y_min), 'x2': str(x), 'y2': str(y_max),
-            'stroke': barrier_style.get('stroke', 'gray'),
-            'stroke-width': str(barrier_style.get('stroke_width', 2)),
-            'stroke-dasharray': barrier_style.get('dasharray', '4,4')
-        })
+        self._draw_line(svg, x, y_min, x, y_max, barrier_config)
+
+    def _draw_line(self, svg, x1, y1, x2, y2, config):
+        style = config['style']
+        stroke = config['stroke']
+        width = config['stroke_width']
+        dash = config.get('dasharray', '')
+        
+        if style == 'wave':
+            amp = config['amplitude']
+            wl = config['wavelength']
+            path_data = self._wave_path(x1, y1, x2, y2, amp, wl)
+            ET.SubElement(svg, 'path', {
+                'd': path_data,
+                'stroke': stroke,
+                'stroke-width': str(width),
+                'fill': 'none',
+                'stroke-dasharray': dash
+            })
+        else:
+            ET.SubElement(svg, 'line', {
+                'x1': str(x1), 'y1': str(y1), 'x2': str(x2), 'y2': str(y2),
+                'stroke': stroke, 'stroke-width': str(width),
+                'stroke-dasharray': dash
+            })
+
+    def _wave_path(self, x1, y1, x2, y2, amplitude, wavelength):
+        import math
+        dist = math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
+        angle = math.atan2(y2 - y1, x2 - x1)
+        
+        num_cycles = int(dist / wavelength)
+        # We'll use a series of cubic beziers (via 'q' and 't' commands)
+        # to simulate the wave, oriented along the line.
+        points = [f"{x1},{y1}"]
+        
+        # For simplicity and precision, we generate points and join with L
+        # This makes it easier to handle arbitrary rotations and non-integer cycles.
+        res = 10 # points per wavelength
+        num_points = int(dist / wavelength * res)
+        d_points = []
+        for i in range(num_points + 1):
+            t = i / num_points
+            curr_dist = t * dist
+            
+            # Local wave offset
+            wave_y = amplitude * math.sin(2 * math.pi * curr_dist / wavelength)
+            
+            # Rotate and translate
+            gx = x1 + curr_dist * math.cos(angle) - wave_y * math.sin(angle)
+            gy = y1 + curr_dist * math.sin(angle) + wave_y * math.cos(angle)
+            d_points.append(f"{gx} {gy}")
+            
+        return "M " + " L ".join(d_points)
+
+    def _draw_shape(self, svg, x, y, config, label=None):
+        shape_type = config['type']
+        
+        if shape_type == 'circle':
+            radius = config['radius']
+            ET.SubElement(svg, 'circle', {
+                'cx': str(x), 'cy': str(y), 'r': str(radius),
+                'fill': config.get('fill', 'none'),
+                'stroke': config.get('stroke', 'none'),
+                'stroke-width': str(config.get('stroke_width', 1))
+            })
+        elif shape_type == 'rect':
+            w = config['width']
+            h = config['height']
+            r = config.get('radius', 0)
+            ET.SubElement(svg, 'rect', {
+                'x': str(x - w/2), 'y': str(y - h/2),
+                'width': str(w), 'height': str(h), 'rx': str(r),
+                'fill': config.get('fill', 'none'),
+                'stroke': config.get('stroke', 'none'),
+                'stroke-width': str(config.get('stroke_width', 1))
+            })
+        elif shape_type == 'emoji':
+            text = ET.SubElement(svg, 'text', {
+                'x': str(x), 'y': str(y),
+                'font-size': '24',
+                'text-anchor': 'middle', 'dominant-baseline': 'middle'
+            })
+            text.text = config['value']
+        elif shape_type == 'image':
+            w = self.theme_manager.get_dimension('gate_width')
+            h = self.theme_manager.get_dimension('gate_height')
+            ET.SubElement(svg, 'image', {
+                'href': config['value'],
+                'x': str(x - w/2), 'y': str(y - h/2),
+                'width': str(w), 'height': str(h)
+            })
+        elif shape_type == 'cross':
+            size = config['size']
+            stroke = config['stroke']
+            sw = config['stroke_width']
+            ET.SubElement(svg, 'line', {
+                'x1': str(x - size), 'y1': str(y - size), 'x2': str(x + size), 'y2': str(y + size),
+                'stroke': stroke, 'stroke-width': str(sw)
+            })
+            ET.SubElement(svg, 'line', {
+                'x1': str(x - size), 'y1': str(y + size), 'x2': str(x + size), 'y2': str(y - size),
+                'stroke': stroke, 'stroke-width': str(sw)
+            })
+        elif shape_type == 'plus_circle':
+            radius = config['radius']
+            stroke = config['stroke']
+            sw = config['stroke_width']
+            ET.SubElement(svg, 'circle', {
+                'cx': str(x), 'cy': str(y), 'r': str(radius),
+                'fill': 'none', 'stroke': stroke, 'stroke-width': str(sw)
+            })
+            ET.SubElement(svg, 'line', {
+                'x1': str(x - radius), 'y1': str(y), 'x2': str(x + radius), 'y2': str(y),
+                'stroke': stroke, 'stroke-width': str(sw)
+            })
+            ET.SubElement(svg, 'line', {
+                'x1': str(x), 'y1': str(y - radius), 'x2': str(x), 'y2': str(y + radius),
+                'stroke': stroke, 'stroke-width': str(sw)
+            })
+        elif shape_type == 'svg':
+             # Inline or external SVG would go here
+             pass
+
+        if label:
+            text_color = self.theme_manager.get_style('text')
+            txt = ET.SubElement(svg, 'text', {
+                'x': str(x), 'y': str(y),
+                'fill': text_color, 'font-family': 'sans-serif', 'font-size': '12',
+                'text-anchor': 'middle', 'dominant-baseline': 'middle'
+            })
+            txt.text = label
 
     def _compute_moments(self, statements, line_nums):
         # Full implementation of moment computation

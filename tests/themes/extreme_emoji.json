@@ -1,0 +1,30 @@
+{
+    "name": "extreme_emoji",
+    "styles": {
+        "connection_line": {
+            "style": "wave",
+            "stroke": "#ff00ff",
+            "stroke_width": 2,
+            "amplitude": 10,
+            "wavelength": 5
+        }
+    },
+    "shapes": {
+        "gate": {
+            "type": "emoji",
+            "value": "🔮"
+        }
+    },
+    "gates": {
+        "h": {
+            "value": "✨"
+        },
+        "x": {
+            "value": "❌"
+        },
+        "measurement": {
+            "type": "emoji",
+            "value": "📏"
+        }
+    }
+}

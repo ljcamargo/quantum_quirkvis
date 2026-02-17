@@ -7,29 +7,71 @@
         "line_spacing": 60,
         "padding": 40,
         "label_offset": 50,
-        "control_dot_radius": 4,
-        "swap_size": 5,
-        "target_plus_radius": 10,
         "barrier_padding": 20
     },
     "styles": {
-        "background": "#ffffff",
-        "wire": "#000000",
-        "text": "#000000",
+        "background": "#fafafa",
+        "text": "#555555",
         "label_font": {
-            "family": "sans-serif",
-            "size": 12
+            "family": "calibri",
+            "size": 16
         },
-        "gate_box": {
-            "fill": "#d4b6e8",
-            "stroke": "#000000",
-            "stroke_width": 1,
-            "radius": 4
+        "qubit_wire": {
+            "style": "straight",
+            "stroke": "#777777",
+            "stroke_width": 3,
+            "dasharray": ""
+        },
+        "connection_line": {
+            "style": "wave",
+            "stroke": "#444444",
+            "stroke_width": 2,
+            "amplitude": 3,
+            "wavelength": 12
         },
         "barrier": {
+            "style": "straight",
             "stroke": "gray",
             "stroke_width": 2,
             "dasharray": "4,4"
+        }
+    },
+    "shapes": {
+        "gate": {
+            "type": "circle",
+            "radius": 20,
+            "fill": "#d4b6e8",
+            "stroke": "#777777",
+            "stroke_width": 2
+        },
+        "control_dot": {
+            "type": "circle",
+            "radius": 5,
+            "fill": "#444444",
+            "stroke": "none"
+        },
+        "target_plus": {
+            "type": "plus_circle",
+            "radius": 12,
+            "fill": "#fafafa",
+            "stroke": "#444444",
+            "stroke_width": 2
+        },
+        "measurement": {
+            "type": "rect",
+            "width": 40,
+            "height": 40,
+            "radius": 4,
+            "fill": "#A0A0A0",
+            "stroke": "#444444",
+            "stroke_width": 1
+        },
+        "swap_x": {
+            "type": "cross",
+            "size": 6,
+            "stroke": "#222222",
+            "stroke_width": 1,
+            "style": "wave"
         }
     },
     "gates": {
@@ -48,24 +90,6 @@
         "z": {
             "fill": "#d4b6e8",
             "label": "Z"
-        },
-        "s": {
-            "fill": "#d4b6e8",
-            "label": "S"
-        },
-        "t": {
-            "fill": "#d4b6e8",
-            "label": "T"
-        },
-        "cx": {
-            "type": "control"
-        },
-        "swap": {
-            "type": "swap"
-        },
-        "measurement": {
-            "fill": "#A0A0A0",
-            "label": "M"
         }
     },
     "substitutions": {}
