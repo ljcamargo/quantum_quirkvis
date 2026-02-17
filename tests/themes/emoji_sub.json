@@ -1,0 +1,17 @@
+{
+    "name": "emoji_sub",
+    "substitutions": {
+        "h": {
+            "type": "emoji",
+            "value": "✨"
+        },
+        "cx": {
+            "type": "emoji",
+            "value": "🔗"
+        },
+        "measurement": {
+            "type": "emoji",
+            "value": "📏"
+        }
+    }
+}

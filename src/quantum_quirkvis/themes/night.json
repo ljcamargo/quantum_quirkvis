@@ -1,0 +1,20 @@
+{
+    "name": "night",
+    "styles": {
+        "background": "#121212",
+        "wire": "#ffffff",
+        "text": "#ffffff",
+        "gate_box": {
+            "fill": "#333333",
+            "stroke": "#ffffff",
+            "stroke_width": 1,
+            "radius": 4
+        }
+    },
+    "gates": {
+        "h": {"fill": "#ff79c6", "label": "H"},
+        "x": {"fill": "#bd93f9", "label": "X"},
+        "y": {"fill": "#50fa7b", "label": "Y"},
+        "z": {"fill": "#f1fa8c", "label": "Z"}
+    }
+}

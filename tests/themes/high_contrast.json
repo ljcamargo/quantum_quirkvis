@@ -1,0 +1,13 @@
+{
+    "name": "high_contrast",
+    "styles": {
+        "background": "#000000",
+        "wire": "#00ff00",
+        "text": "#00ff00",
+        "gate_box": {
+            "fill": "#000000",
+            "stroke": "#00ff00",
+            "stroke_width": 2
+        }
+    }
+}

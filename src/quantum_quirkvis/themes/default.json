@@ -1,0 +1,72 @@
+{
+    "name": "default",
+    "dimensions": {
+        "gate_width": 40,
+        "gate_height": 40,
+        "gate_spacing": 20,
+        "line_spacing": 60,
+        "padding": 40,
+        "label_offset": 50,
+        "control_dot_radius": 4,
+        "swap_size": 5,
+        "target_plus_radius": 10,
+        "barrier_padding": 20
+    },
+    "styles": {
+        "background": "#ffffff",
+        "wire": "#000000",
+        "text": "#000000",
+        "label_font": {
+            "family": "sans-serif",
+            "size": 12
+        },
+        "gate_box": {
+            "fill": "#d4b6e8",
+            "stroke": "#000000",
+            "stroke_width": 1,
+            "radius": 4
+        },
+        "barrier": {
+            "stroke": "gray",
+            "stroke_width": 2,
+            "dasharray": "4,4"
+        }
+    },
+    "gates": {
+        "h": {
+            "fill": "#f0a6a6",
+            "label": "H"
+        },
+        "x": {
+            "fill": "#d4b6e8",
+            "label": "X"
+        },
+        "y": {
+            "fill": "#d4b6e8",
+            "label": "Y"
+        },
+        "z": {
+            "fill": "#d4b6e8",
+            "label": "Z"
+        },
+        "s": {
+            "fill": "#d4b6e8",
+            "label": "S"
+        },
+        "t": {
+            "fill": "#d4b6e8",
+            "label": "T"
+        },
+        "cx": {
+            "type": "control"
+        },
+        "swap": {
+            "type": "swap"
+        },
+        "measurement": {
+            "fill": "#A0A0A0",
+            "label": "M"
+        }
+    },
+    "substitutions": {}
+}

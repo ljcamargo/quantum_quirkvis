@@ -1,0 +1,19 @@
+[project]
+name = "quantum_quirkvis"
+version = "0.1.0"
+description = "Personalized Quantum Circuit SVG Visualizer"
+authors = [
+    { name = "Antigravity", email = "antigravity@google.com" }
+]
+dependencies = [
+    "pyqasm",
+]
+readme = "README.md"
+requires-python = ">=3.8"
+
+[project.scripts]
+quirkvis = "quantum_quirkvis.cli:main"
+
+[build-system]
+requires = ["setuptools>=61.0"]
+build-backend = "setuptools.build-meta"
