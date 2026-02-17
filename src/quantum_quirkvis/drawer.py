@@ -105,12 +105,29 @@ class SVGDrawer:
         padding = self.theme_manager.get_dimension('padding')
         line_spacing = self.theme_manager.get_dimension('line_spacing')
 
+        # Evaluate parameters if any
+        params = []
+        if hasattr(gate, 'arguments') and gate.arguments:
+            from pyqasm.expressions import Qasm3ExprEvaluator
+            for arg in gate.arguments:
+                try:
+                    val = Qasm3ExprEvaluator.evaluate_expression(arg)[0]
+                    params.append(val)
+                except:
+                    pass
+
         for line_idx in lines:
             y = padding + line_idx * line_spacing
+            
+            # Determine label: theme override > default name
+            gate_label = config.get('label', name.upper())
+            if 'text' in config:
+                gate_label = config['text']
+            
             if sub:
-                self._draw_shape(svg, x, y, sub, label=config.get('label', name.upper()))
+                self._draw_shape(svg, x, y, sub, label=gate_label, params=params)
             else:
-                self._draw_shape(svg, x, y, config, label=config.get('label', name.upper()))
+                self._draw_shape(svg, x, y, config, label=gate_label, params=params)
 
     def _draw_cx(self, svg, ctrl_line, target_line, x):
         padding = self.theme_manager.get_dimension('padding')
@@ -154,7 +171,12 @@ class SVGDrawer:
         y = padding + line_idx * line_spacing
         
         config = self.theme_manager.get_gate_config('measurement')
-        self._draw_shape(svg, x, y, config, label=config.get('label', 'M'))
+        
+        gate_label = config.get('label', 'M')
+        if 'text' in config:
+            gate_label = config['text']
+            
+        self._draw_shape(svg, x, y, config, label=gate_label)
 
     def _draw_barrier(self, svg, stmt, x, line_nums):
         padding = self.theme_manager.get_dimension('padding')
@@ -200,13 +222,7 @@ class SVGDrawer:
         dist = math.sqrt((x2 - x1)**2 + (y2 - y1)**2)
         angle = math.atan2(y2 - y1, x2 - x1)
         
-        num_cycles = int(dist / wavelength)
-        # We'll use a series of cubic beziers (via 'q' and 't' commands)
-        # to simulate the wave, oriented along the line.
-        points = [f"{x1},{y1}"]
-        
         # For simplicity and precision, we generate points and join with L
-        # This makes it easier to handle arbitrary rotations and non-integer cycles.
         res = 10 # points per wavelength
         num_points = int(dist / wavelength * res)
         d_points = []
@@ -224,7 +240,7 @@ class SVGDrawer:
             
         return "M " + " L ".join(d_points)
 
-    def _draw_shape(self, svg, x, y, config, label=None):
+    def _draw_shape(self, svg, x, y, config, label=None, params=None):
         shape_type = config['type']
         
         if shape_type == 'circle':
@@ -235,6 +251,10 @@ class SVGDrawer:
                 'stroke': config.get('stroke', 'none'),
                 'stroke-width': str(config.get('stroke_width', 1))
             })
+            # Draw parametric arc if requested
+            if params and config.get('parametric_mode') == 'arc':
+                self._draw_parametric_arc(svg, x, y, radius, params[0], config)
+
         elif shape_type == 'rect':
             w = config['width']
             h = config['height']
@@ -247,9 +267,10 @@ class SVGDrawer:
                 'stroke-width': str(config.get('stroke_width', 1))
             })
         elif shape_type == 'emoji':
+            font_size = config.get('font_size', 24)
             text = ET.SubElement(svg, 'text', {
                 'x': str(x), 'y': str(y),
-                'font-size': '24',
+                'font-size': str(font_size),
                 'text-anchor': 'middle', 'dominant-baseline': 'middle'
             })
             text.text = config['value']
@@ -263,23 +284,24 @@ class SVGDrawer:
             })
         elif shape_type == 'cross':
             size = config['size']
-            stroke = config['stroke']
-            sw = config['stroke_width']
-            ET.SubElement(svg, 'line', {
-                'x1': str(x - size), 'y1': str(y - size), 'x2': str(x + size), 'y2': str(y + size),
-                'stroke': stroke, 'stroke-width': str(sw)
-            })
-            ET.SubElement(svg, 'line', {
-                'x1': str(x - size), 'y1': str(y + size), 'x2': str(x + size), 'y2': str(y - size),
-                'stroke': stroke, 'stroke-width': str(sw)
-            })
+            line_config = {
+                'style': config.get('style', 'straight'),
+                'stroke': config['stroke'],
+                'stroke_width': config['stroke_width'],
+                'dasharray': config.get('dasharray', ''),
+                'amplitude': config.get('amplitude', 2),
+                'wavelength': config.get('wavelength', 4)
+            }
+            self._draw_line(svg, x - size, y - size, x + size, y + size, line_config)
+            self._draw_line(svg, x - size, y + size, x + size, y - size, line_config)
         elif shape_type == 'plus_circle':
             radius = config['radius']
             stroke = config['stroke']
             sw = config['stroke_width']
+            fill = config.get('fill', 'none')
             ET.SubElement(svg, 'circle', {
                 'cx': str(x), 'cy': str(y), 'r': str(radius),
-                'fill': 'none', 'stroke': stroke, 'stroke-width': str(sw)
+                'fill': fill, 'stroke': stroke, 'stroke-width': str(sw)
             })
             ET.SubElement(svg, 'line', {
                 'x1': str(x - radius), 'y1': str(y), 'x2': str(x + radius), 'y2': str(y),
@@ -290,7 +312,6 @@ class SVGDrawer:
                 'stroke': stroke, 'stroke-width': str(sw)
             })
         elif shape_type == 'svg':
-             # Inline or external SVG would go here
              pass
 
         if label:
@@ -301,6 +322,45 @@ class SVGDrawer:
                 'text-anchor': 'middle', 'dominant-baseline': 'middle'
             })
             txt.text = label
+
+    def _draw_parametric_arc(self, svg, x, y, base_radius, theta, config):
+        import math
+        arc_stroke_width = config.get('arc_stroke_width', 4)
+        arc_stroke = config.get('arc_stroke', '#ff0000')
+        
+        # Radius for the arc (inner rim)
+        # We'll go slightly inside the base radius minus half the base stroke
+        base_stroke_width = config.get('stroke_width', 1)
+        radius = base_radius - base_stroke_width - arc_stroke_width/2 - 1
+        
+        # theta is in radians. 2*pi is full circle.
+        # We start from top (3*pi/2)
+        start_angle = -math.pi / 2
+        end_angle = start_angle + theta
+        
+        x1 = x + radius * math.cos(start_angle)
+        y1 = y + radius * math.sin(start_angle)
+        x2 = x + radius * math.cos(end_angle)
+        y2 = y + radius * math.sin(end_angle)
+        
+        large_arc_flag = 1 if theta > math.pi else 0
+        sweep_flag = 1 # clockwise
+        
+        if theta >= 2 * math.pi:
+            # Full circle doesn't work well with arc command, draw a circle instead
+            ET.SubElement(svg, 'circle', {
+                'cx': str(x), 'cy': str(y), 'r': str(radius),
+                'fill': 'none', 'stroke': arc_stroke, 'stroke-width': str(arc_stroke_width)
+            })
+        else:
+            d = f"M {x1} {y1} A {radius} {radius} 0 {large_arc_flag} {sweep_flag} {x2} {y2}"
+            ET.SubElement(svg, 'path', {
+                'd': d,
+                'fill': 'none',
+                'stroke': arc_stroke,
+                'stroke-width': str(arc_stroke_width),
+                'stroke-linecap': 'round'
+            })
 
     def _compute_moments(self, statements, line_nums):
         # Full implementation of moment computation

@@ -90,6 +90,34 @@
         "z": {
             "fill": "#d4b6e8",
             "label": "Z"
+        },
+        "rx": {
+            "parametric_mode": "arc",
+            "arc_stroke": "#ff5555",
+            "arc_stroke_width": 3,
+            "label": "Rx",
+            "fill": "#ffe0e0"
+        },
+        "ry": {
+            "parametric_mode": "arc",
+            "arc_stroke": "#55ff55",
+            "arc_stroke_width": 3,
+            "label": "Ry",
+            "fill": "#e0ffe0"
+        },
+        "rz": {
+            "parametric_mode": "arc",
+            "arc_stroke": "#5555ff",
+            "arc_stroke_width": 3,
+            "label": "Rz",
+            "fill": "#e0e0ff"
+        },
+        "p": {
+            "parametric_mode": "arc",
+            "arc_stroke": "#f1fa8c",
+            "arc_stroke_width": 3,
+            "label": "P",
+            "fill": "#fdfdfb"
         }
     },
     "substitutions": {}
