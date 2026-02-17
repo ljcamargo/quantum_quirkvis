@@ -266,6 +266,15 @@ class SVGDrawer:
                 'stroke': config.get('stroke', 'none'),
                 'stroke-width': str(config.get('stroke_width', 1))
             })
+        elif shape_type == 'diamond':
+            size = config.get('radius', config.get('size', 20))
+            points = f"{x},{y-size} {x+size},{y} {x},{y+size} {x-size},{y}"
+            ET.SubElement(svg, 'polygon', {
+                'points': points,
+                'fill': config.get('fill', 'none'),
+                'stroke': config.get('stroke', 'none'),
+                'stroke-width': str(config.get('stroke_width', 1))
+            })
         elif shape_type == 'emoji':
             font_size = config.get('font_size', 24)
             text = ET.SubElement(svg, 'text', {
@@ -328,10 +337,13 @@ class SVGDrawer:
         arc_stroke_width = config.get('arc_stroke_width', 4)
         arc_stroke = config.get('arc_stroke', '#ff0000')
         
-        # Radius for the arc (inner rim)
-        # We'll go slightly inside the base radius minus half the base stroke
-        base_stroke_width = config.get('stroke_width', 1)
-        radius = base_radius - base_stroke_width - arc_stroke_width/2 - 1
+        # Determine radius for the arc
+        if 'arc_radius' in config:
+            radius = config['arc_radius']
+        else:
+            # Fallback to inner rim logic if not specified
+            base_stroke_width = config.get('stroke_width', 1)
+            radius = base_radius - base_stroke_width - arc_stroke_width/2 - 1
         
         # theta is in radians. 2*pi is full circle.
         # We start from top (3*pi/2)
@@ -412,25 +424,38 @@ class SVGDrawer:
         raise ValueError(f"Unsupported identifier: {identifier}")
 
     def _compute_line_nums(self, module):
-        # Adapted from pyqasm printer.py
         line_nums = {}
         sizes = {}
-        line_num = -1
+        line_num = 0
         
-        # Classical registers
-        for k in module._classical_registers:
-            line_num += 1
-            line_nums[(k, -1)] = line_num
-            sizes[(k, -1)] = module._classical_registers[k]
+        # Get ordering preferences from theme (dimensions or layout)
+        try:
+            rev_q = self.theme_manager.get_dimension('reverse_qubit_order')
+        except:
+            rev_q = False
             
-        # Qubit registers
+        try:
+            rev_c = self.theme_manager.get_dimension('reverse_classical_order')
+        except:
+            rev_c = False
+
+        # Qubit registers first (at the top)
         for qubit_reg in module._qubit_registers:
             size = module._qubit_registers[qubit_reg]
-            line_num += size
-            for i in range(size):
+            indices = list(range(size))
+            if rev_q:
+                indices.reverse()
+            for i in indices:
                 line_nums[(qubit_reg, i)] = line_num
-                line_num -= 1
-            line_num += size
+                line_num += 1
+
+        # Classical registers second (at the bottom)
+        for k in module._classical_registers:
+            size = module._classical_registers[k]
+            # Pyqasm supports (name, -1) for classical registers in statements
+            line_nums[(k, -1)] = line_num
+            sizes[(k, -1)] = size
+            line_num += 1
             
         return line_nums, sizes
 

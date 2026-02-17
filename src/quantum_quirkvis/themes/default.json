@@ -7,7 +7,9 @@
         "line_spacing": 60,
         "padding": 40,
         "label_offset": 50,
-        "barrier_padding": 20
+        "barrier_padding": 20,
+        "reverse_qubit_order": false,
+        "reverse_classical_order": false
     },
     "styles": {
         "background": "#fafafa",
@@ -58,10 +60,8 @@
             "stroke_width": 2
         },
         "measurement": {
-            "type": "rect",
-            "width": 40,
-            "height": 40,
-            "radius": 4,
+            "type": "diamond",
+            "radius": 18,
             "fill": "#A0A0A0",
             "stroke": "#444444",
             "stroke_width": 1
@@ -95,6 +95,7 @@
             "parametric_mode": "arc",
             "arc_stroke": "#ff5555",
             "arc_stroke_width": 3,
+            "arc_radius": 14,
             "label": "Rx",
             "fill": "#ffe0e0"
         },
@@ -102,6 +103,7 @@
             "parametric_mode": "arc",
             "arc_stroke": "#55ff55",
             "arc_stroke_width": 3,
+            "arc_radius": 14,
             "label": "Ry",
             "fill": "#e0ffe0"
         },
@@ -109,6 +111,7 @@
             "parametric_mode": "arc",
             "arc_stroke": "#5555ff",
             "arc_stroke_width": 3,
+            "arc_radius": 14,
             "label": "Rz",
             "fill": "#e0e0ff"
         },
@@ -116,8 +119,13 @@
             "parametric_mode": "arc",
             "arc_stroke": "#f1fa8c",
             "arc_stroke_width": 3,
+            "arc_radius": 14,
             "label": "P",
             "fill": "#fdfdfb"
+        },
+        "measurement": {
+            "type": "diamond",
+            "label": "M"
         }
     },
     "substitutions": {}
