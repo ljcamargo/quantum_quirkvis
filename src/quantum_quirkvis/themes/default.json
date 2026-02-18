@@ -131,6 +131,12 @@
         "measurement": {
             "type": "diamond",
             "label": "M"
+        },
+        "cx": {
+            "target_shape": "target_plus"
+        },
+        "ccx": {
+            "target_shape": "target_plus"
         }
     },
     "substitutions": {}

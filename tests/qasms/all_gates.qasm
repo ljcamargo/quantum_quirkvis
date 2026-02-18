@@ -13,14 +13,16 @@ t q[2];
 barrier q;
 
 cx q[0], q[1];
-swap q[1], q[2];
-cz q[0], q[2];
+ccx q[0], q[1], q[2];
+cz q[1], q[2];
+cz q[2], q[0];
+swap q[0], q[2];
 
 barrier q;
 
 rx(pi/2) q[0];
 ry(pi/4) q[1];
-rz(pi) q[2];
+rz(-pi/2) q[2];
 
 barrier q;
 

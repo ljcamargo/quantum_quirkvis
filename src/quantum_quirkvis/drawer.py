@@ -112,11 +112,16 @@ class SVGDrawer:
         sub = self.theme_manager.get_substitution(name)
         config = self.theme_manager.get_gate_config(name)
         
-        if name == "cx" and len(lines) == 2:
-            self._draw_cx(svg, lines[0], lines[1], x, phase)
-            return
-        elif name == "swap" and len(lines) == 2:
+        if name == "swap" and len(lines) == 2:
             self._draw_swap(svg, lines[0], lines[1], x, phase)
+            return
+            
+        # Determine if it's a controlled gate (starts with 'c', but not 'cz', 'ccx' etc handles specifically or generally)
+        is_controlled = name.startswith('c') and name != 'curry' # simple heuristic
+        if name in ['ccx', 'ccz']: is_controlled = True
+
+        if is_controlled and len(lines) > 1:
+            self._draw_controlled_gate(svg, name, lines, x, phase, gate)
             return
 
         if phase == 'lines':
@@ -157,26 +162,63 @@ class SVGDrawer:
             else:
                 self._draw_shape(svg, x, y, config, label=gate_label, params=params)
 
-    def _draw_cx(self, svg, ctrl_line, target_line, x, phase='shapes'):
-        padding = self.theme_manager.get_dimension('padding')
-        line_spacing = self.theme_manager.get_dimension('line_spacing')
-        
-        y1 = padding + ctrl_line * line_spacing
-        y2 = padding + target_line * line_spacing
+    def _draw_controlled_gate(self, svg, name, lines, x, phase, gate):
+        # By convention, the last qubit is the target, others are controls
+        ctrl_lines = lines[:-1]
+        target_line = lines[-1]
         
         if phase == 'lines':
-            # Vertical connection line
+            padding = self.theme_manager.get_dimension('padding')
+            line_spacing = self.theme_manager.get_dimension('line_spacing')
+            y_min = padding + min(lines) * line_spacing
+            y_max = padding + max(lines) * line_spacing
             conn_config = self.theme_manager.get_style('connection_line')
-            self._draw_line(svg, x, y1, x, y2, conn_config)
+            self._draw_line(svg, x, y_min, x, y_max, conn_config)
             return
+
+        # Draw controls
+        ctrl_config = self.theme_manager.get_shape_config('control_dot')
+        padding = self.theme_manager.get_dimension('padding')
+        line_spacing = self.theme_manager.get_dimension('line_spacing')
+        for cl in ctrl_lines:
+            y = padding + cl * line_spacing
+            # Theme override for control dot per gate
+            gate_config = self.theme_manager.theme.get('gates', {}).get(name, {})
+            specific_ctrl = gate_config.get('control_shape', ctrl_config)
+            if isinstance(specific_ctrl, str): # if it's just a shape name reference
+                specific_ctrl = self.theme_manager.get_shape_config(specific_ctrl)
+            self._draw_shape(svg, x, y, specific_ctrl)
+
+        # Draw target
+        y_target = padding + target_line * line_spacing
         
-        # Control dot
-        dot_config = self.theme_manager.get_shape_config('control_dot')
-        self._draw_shape(svg, x, y1, dot_config)
-        
-        # Target plus
-        plus_config = self.theme_manager.get_shape_config('target_plus')
-        self._draw_shape(svg, x, y2, plus_config)
+        # Determine target shape
+        if name in ['cx', 'ccx']:
+            target_config = self.theme_manager.get_shape_config('target_plus')
+            self._draw_shape(svg, x, y_target, target_config)
+        else:
+            # Strip leading 'c' to find base gate config (e.g. 'cz' -> 'z')
+            base_name = name[1:] if name.startswith('c') else name
+            if name.startswith('cc'): base_name = name[2:]
+            
+            target_config = self.theme_manager.get_gate_config(base_name)
+            
+            # Evaluate parameters for target gate
+            params = []
+            if hasattr(gate, 'arguments') and gate.arguments:
+                from pyqasm.expressions import Qasm3ExprEvaluator
+                for arg in gate.arguments:
+                    params.append(Qasm3ExprEvaluator.evaluate_expression(arg)[0])
+            
+            gate_label = target_config.get('label', base_name.upper())
+            if 'text' in target_config: gate_label = target_config['text']
+            
+            self._draw_shape(svg, x, y_target, target_config, label=gate_label, params=params)
+
+    def _draw_cx(self, svg, ctrl_line, target_line, x, phase='shapes'):
+        # Just route to the new generalized controlled gate logic
+        # This keeps the signature for backward compatibility if needed internally
+        pass 
 
     def _draw_swap(self, svg, line1, line2, x, phase='shapes'):
         padding = self.theme_manager.get_dimension('padding')
