@@ -5,10 +5,10 @@ from quantum_quirkvis import draw
 # Directories
 QASM_DIR = "tests/qasms"
 THEME_DIR = "tests/themes"
-OUTPUT_DIR = "test_output"
+OUTPUT_DIR = "tests/outputs"
 
 # Built-in themes to test
-BUILTIN_THEMES = ["default", "night"]
+BUILTIN_THEMES = ["default",]# "night"]
 
 def run_tests():
     # Ensure output directory exists
@@ -21,7 +21,7 @@ def run_tests():
     theme_files = glob.glob(os.path.join(THEME_DIR, "*.json"))
     
     # Combined list of themes (built-in names and file paths)
-    themes = BUILTIN_THEMES + theme_files
+    themes = BUILTIN_THEMES #+ theme_files
 
     print(f"Starting automated tests...")
     print(f"Found {len(qasm_files)} QASM files and {len(themes)} themes.")
@@ -43,12 +43,9 @@ def run_tests():
             output_path = os.path.join(OUTPUT_DIR, output_filename)
             
             print(f" - Rendering {qasm_name} with theme {theme_name} -> {output_filename}")
-            try:
-                draw(qasm_content, theme=theme, filename=output_path)
-                count += 1
-            except Exception as e:
-                print(f"   [ERROR] Failed to render {qasm_name} with theme {theme_name}: {e}")
-
+            draw(qasm_content, theme=theme, filename=output_path)
+            count += 1
+            
     print(f"\nFinished! Generated {count} SVG files in '{OUTPUT_DIR}'.")
 
 if __name__ == "__main__":

@@ -1,5 +1,6 @@
 import xml.etree.ElementTree as ET
 from pyqasm.entrypoint import loads
+from openqasm3 import ast
 from .theme import ThemeManager
 
 class SVGDrawer:
@@ -14,9 +15,17 @@ class SVGDrawer:
 
         module.unroll()
         module.remove_includes()
-        
+
+        quantum_registers = list(module._qubit_registers.keys()) if module._qubit_registers else []
+        classical_registers = list(module._classical_registers.keys()) if module._classical_registers else []
         line_nums, sizes = self._compute_line_nums(module)
         statements = list(module._statements)
+        # Collapse barriers into one:
+        result = []
+        for stmt in statements:
+            if not (result and isinstance(stmt, ast.QuantumBarrier) and isinstance(result[-1], ast.QuantumBarrier)):
+                result.append(stmt)
+        statements = result
         moments, depths = self._compute_moments(statements, line_nums)
         
         n_lines = max(line_nums.values()) + 1 if line_nums else 0
@@ -82,27 +91,26 @@ class SVGDrawer:
         x = x_start
         for moment in moments:
             for stmt in moment:
-                self._draw_statement(svg, stmt, x, line_nums, phase='lines')
+                self._draw_statement(svg, stmt, x, line_nums, phase='lines', qbits=quantum_registers, classical=classical_registers)
             x += gate_width + gate_spacing
 
         # Draw moments Phase 2: Shapes/Gates
         x = x_start
         for moment in moments:
             for stmt in moment:
-                self._draw_statement(svg, stmt, x, line_nums, phase='shapes')
+                self._draw_statement(svg, stmt, x, line_nums, phase='shapes', qbits=quantum_registers, classical=classical_registers)
             x += gate_width + gate_spacing
 
         return ET.tostring(svg, encoding='unicode')
 
-    def _draw_statement(self, svg, stmt, x, line_nums, phase='shapes'):
-        from openqasm3 import ast
+    def _draw_statement(self, svg, stmt, x, line_nums, phase='shapes', qbits=[], classical=[]):
         if isinstance(stmt, ast.QuantumGate):
             self._draw_gate(svg, stmt, x, line_nums, phase)
         elif isinstance(stmt, ast.QuantumMeasurementStatement):
             self._draw_measurement(svg, stmt, x, line_nums, phase)
         elif isinstance(stmt, ast.QuantumBarrier):
             if phase == 'lines': # Barrier is a line
-                self._draw_barrier(svg, stmt, x, line_nums)
+                self._draw_barrier(svg, stmt, x, line_nums, qbits)
 
     def _draw_gate(self, svg, gate, x, line_nums, phase='shapes'):
         name = gate.name.name.lower()
@@ -239,7 +247,6 @@ class SVGDrawer:
     def _draw_measurement(self, svg, stmt, x, line_nums, phase='shapes'):
         padding = self.theme_manager.get_dimension('padding')
         line_spacing = self.theme_manager.get_dimension('line_spacing')
-        
         qubit = self._identifier_to_key(stmt.measure.qubit)
         line_idx = line_nums[qubit]
         y = padding + line_idx * line_spacing
@@ -271,14 +278,13 @@ class SVGDrawer:
             
         self._draw_shape(svg, x, y, config, label=gate_label)
 
-    def _draw_barrier(self, svg, stmt, x, line_nums):
+    def _draw_barrier(self, svg, stmt, x, line_nums, qbits):
         padding = self.theme_manager.get_dimension('padding')
         line_spacing = self.theme_manager.get_dimension('line_spacing')
         barrier_config = self.theme_manager.get_style('barrier')
         barrier_padding = self.theme_manager.get_dimension('barrier_padding')
         
-        qubits = [self._identifier_to_key(q) for q in stmt.qubits]
-        lines = [line_nums[q] for q in qubits]
+        lines = [v for k, v in line_nums.items() if k[0] in qbits]
         if not lines: return
         
         y_min = padding + min(lines) * line_spacing - barrier_padding
@@ -469,7 +475,6 @@ class SVGDrawer:
 
     def _compute_moments(self, statements, line_nums):
         # Full implementation of moment computation
-        from openqasm3 import ast
         depths = {k: -1 for k in line_nums}
         moments = []
         
@@ -494,7 +499,6 @@ class SVGDrawer:
                     
             elif isinstance(statement, ast.QuantumMeasurementStatement):
                 key = self._identifier_to_key(statement.measure.qubit)
-                
                 target_key = None
                 if statement.target:
                     target_key = self._identifier_to_key(statement.target)
@@ -503,27 +507,19 @@ class SVGDrawer:
                     if ('c', 0) in line_nums: target_key = ('c', 0)
                     elif ('c', -1) in line_nums: target_key = ('c', -1)
 
-                if target_key and target_key in line_nums:
-                    l1, l2 = line_nums[key], line_nums[target_key]
-                    min_l, max_l = min(l1, l2), max(l1, l2)
-                    keys_in_span = [k for k, v in line_nums.items() if min_l <= v <= max_l]
-                    
-                    depth = 1 + max(depths[k] for k in keys_in_span)
-                    for k in keys_in_span:
-                        depths[k] = depth
-                else:
-                    depth = 1 + depths[key]
-                    depths[key] = depth
+                keys_in_span = [k for k, v in line_nums.items()]
+                depth = 1 + max(depths[k] for k in keys_in_span)
+                for k in keys_in_span:
+                    depths[k] = depth
             elif isinstance(statement, ast.QuantumBarrier):
                 qubits = [self._identifier_to_key(q) for q in statement.qubits]
-                if not qubits:
-                    keys = list(line_nums.keys())
-                else:
-                    keys = qubits
+                lines = [line_nums[q] for q in qubits]
                 
-                depth = 1 + max(depths[k] for k in keys)
-                for k in keys:
-                    depths[k] = depth
+                # Clearance behavior: occupy all lines in the vertical span
+                keys_in_span = [k for k, v in line_nums.items()]
+                depth = 1 + max(depths[key] for key in keys_in_span)
+                for key in keys_in_span:
+                    depths[key] = depth
             else:
                 # Skip other statements for now
                 continue
@@ -537,7 +533,6 @@ class SVGDrawer:
         return moments, depths
 
     def _identifier_to_key(self, identifier):
-        from openqasm3 import ast
         from pyqasm.expressions import Qasm3ExprEvaluator
         if isinstance(identifier, ast.Identifier):
             return identifier.name, -1
@@ -577,6 +572,11 @@ class SVGDrawer:
                 line_num += 1
 
         # Classical registers second (at the bottom)
+        # Any measures on statements??:
+        any_measures = any(isinstance(s, ast.QuantumMeasurementStatement) for s in module._statements)
+
+        if any_measures and not module._classical_registers:
+            module._classical_registers = {"c": 1}
         for k in module._classical_registers:
             size = module._classical_registers[k]
             indices = list(range(size))
