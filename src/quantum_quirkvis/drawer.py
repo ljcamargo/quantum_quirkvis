@@ -448,10 +448,10 @@ class SVGDrawer:
         x2 = x + radius * math.cos(end_angle)
         y2 = y + radius * math.sin(end_angle)
         
-        large_arc_flag = 1 if theta > math.pi else 0
-        sweep_flag = 1 # clockwise
+        large_arc_flag = 1 if abs(theta) > math.pi else 0
+        sweep_flag = 1 if theta >= 0 else 0 # 1=clockwise (right), 0=anticlockwise (left)
         
-        if theta >= 2 * math.pi:
+        if abs(theta) >= 2 * math.pi:
             # Full circle doesn't work well with arc command, draw a circle instead
             ET.SubElement(svg, 'circle', {
                 'cx': str(x), 'cy': str(y), 'r': str(radius),
@@ -514,6 +514,16 @@ class SVGDrawer:
                 else:
                     depth = 1 + depths[key]
                     depths[key] = depth
+            elif isinstance(statement, ast.QuantumBarrier):
+                qubits = [self._identifier_to_key(q) for q in statement.qubits]
+                if not qubits:
+                    keys = list(line_nums.keys())
+                else:
+                    keys = qubits
+                
+                depth = 1 + max(depths[k] for k in keys)
+                for k in keys:
+                    depths[k] = depth
             else:
                 # Skip other statements for now
                 continue
