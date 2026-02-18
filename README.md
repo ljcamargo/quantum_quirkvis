@@ -23,7 +23,7 @@ A python package that draws quantum circuits written in qasm/OpenQASM 3.0 and ou
 
 ## Installation
 ```bash
-pip install .
+pip install quirkvis
 ```
 
 ## Usage
@@ -65,8 +65,22 @@ then simply
 draw(qasm_str, theme="mytheme.json")
 ```
 
+You can also use the cli provided which exposes the command **qasmvis** 
+
+```bash
+qasmvis ghz.qasm -t matrix -o ghz.svg
+```
+or
+```bash
+qasmvis ghz.qasm -t matrix > ghz.svg
+```
+or
+```bash
+cat ghz.qasm | qasmvis -t night > ghz.svg
+```
+
 ## Libraries
-The current package just requires openqasm to parse the qasm files or string into the AST that is processed to create SVG with the selected theme.
+The current package just requires pyqasm to parse the qasm files or string into the AST that is processed to create SVG with the selected theme.
 
 ## License
 MIT
