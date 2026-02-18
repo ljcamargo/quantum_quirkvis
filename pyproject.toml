@@ -1,7 +1,7 @@
 [project]
 name = "quirkvis"
 version = "0.1.0"
-description = "Highlty Customizable Quantum Circuit SVG Visualizer"
+description = "Highly Customizable Quantum Circuit SVG Visualizer"
 authors = [
     { name = "Luis J Camargo", email = "lsjcp@yahoo.com" }
 ]
