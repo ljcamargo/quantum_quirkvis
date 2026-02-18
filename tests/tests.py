@@ -3,12 +3,12 @@ import glob
 from quantum_quirkvis import draw
 
 # Directories
-QASM_DIR = "tests/qasms"
-THEME_DIR = "tests/themes"
-OUTPUT_DIR = "tests/outputs"
+QASM_DIR = "./qasms"
+THEME_DIR = "./themes"
+OUTPUT_DIR = "./outputs"
 
 # Built-in themes to test
-BUILTIN_THEMES = ["default", "night"]
+BUILTIN_THEMES = ["default", "night", "emoji", "matrix",]
 
 def run_tests():
     # Ensure output directory exists
