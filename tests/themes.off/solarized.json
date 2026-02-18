@@ -1,5 +1,5 @@
 {
-    "name": "default",
+    "name": "solarized",
     "dimensions": {
         "gate_width": 40,
         "gate_height": 40,
@@ -12,34 +12,34 @@
         "reverse_classical_order": false
     },
     "styles": {
-        "background": "#fafafa",
-        "text": "#555555",
+        "background": "#fdf6e3",
+        "text": "#657b83",
         "label_font": {
             "family": "calibri",
             "size": 17
         },
         "qubit_wire": {
             "style": "straight",
-            "stroke": "#777777",
+            "stroke": "#93a1a1",
             "stroke_width": 3,
             "dasharray": ""
         },
         "connection_line": {
             "style": "wave",
-            "stroke": "#555555",
+            "stroke": "#839496",
             "stroke_width": 2,
             "amplitude": 3,
             "wavelength": 12
         },
         "measurement_line": {
             "style": "straight",
-            "stroke": "#777777",
+            "stroke": "#93a1a1",
             "stroke_width": 2,
             "dasharray": "2,2"
         },
         "barrier": {
             "style": "straight",
-            "stroke": "#999999",
+            "stroke": "#eee8d5",
             "stroke_width": 3,
             "dasharray": "4,4"
         }
@@ -48,105 +48,105 @@
         "gate": {
             "type": "circle",
             "radius": 20,
-            "fill": "#d4b6e8",
-            "stroke": "#777777",
+            "fill": "#eee8d5",
+            "stroke": "#93a1a1",
             "stroke_width": 2
         },
         "control_dot": {
             "type": "circle",
             "radius": 4,
-            "fill": "#555555",
+            "fill": "#586e75",
             "stroke": "none"
         },
         "target_plus": {
             "type": "plus_circle",
             "radius": 12,
-            "fill": "#fafafa",
-            "stroke": "#555555",
+            "fill": "#fdf6e3",
+            "stroke": "#586e75",
             "stroke_width": 2
         },
         "measurement": {
             "type": "diamond",
             "radius": 18,
-            "fill": "#A0A0A0",
-            "stroke": "#444444",
+            "fill": "#eee8d5",
+            "stroke": "#839496",
             "stroke_width": 1
         },
         "swap_x": {
             "type": "cross",
             "size": 8,
-            "stroke": "#222222",
+            "stroke": "#586e75",
             "stroke_width": 2
         }
     },
     "gates": {
         "h": {
-            "fill": "#e8b5ca",
+            "fill": "#d33682",
             "label": "H"
         },
         "x": {
-            "fill": "#ffe0e0",
+            "fill": "#dc322f",
             "label": "X"
         },
         "y": {
-            "fill": "#e0ffe0",
+            "fill": "#859900",
             "label": "Y"
         },
         "z": {
-            "fill": "#ccccff",
+            "fill": "#268bd2",
             "label": "Z"
         },
         "rx": {
             "parametric_mode": "arc",
-            "arc_stroke": "#ff6666",
+            "arc_stroke": "#cb4b16",
             "arc_stroke_width": 4,
             "arc_radius": 17,
             "label": "Rx",
-            "fill": "#ffe0e0"
+            "fill": "#eee8d5"
         },
         "ry": {
             "parametric_mode": "arc",
-            "arc_stroke": "#5eba5e",
+            "arc_stroke": "#859900",
             "arc_stroke_width": 4,
             "arc_radius": 17,
             "label": "Ry",
-            "fill": "#e0ffe0"
+            "fill": "#eee8d5"
         },
         "rz": {
             "parametric_mode": "arc",
-            "arc_stroke": "#5757fa",
+            "arc_stroke": "#268bd2",
             "arc_stroke_width": 4,
             "arc_radius": 17,
             "label": "Rz",
-            "fill": "#ccccff"
+            "fill": "#eee8d5"
         },
         "sdg": {
-            "fill": "#e8dfb5",
+            "fill": "#b58900",
             "label": "S†"
         },
         "s": {
-            "fill": "#b5e8c0",
+            "fill": "#2aa198",
             "label": "S"
         },
         "tdg": {
-            "fill": "#b5e5e8",
+            "fill": "#6c71c4",
             "label": "T†"
         },
         "t": {
-            "fill": "#beb5e8",
+            "fill": "#6c71c4",
             "label": "T"
         },
         "p": {
             "parametric_mode": "arc",
-            "arc_stroke": "#f1fa8c",
+            "arc_stroke": "#b58900",
             "arc_stroke_width": 3,
             "arc_radius": 18,
             "label": "P",
-            "fill": "#fdfdfb"
+            "fill": "#eee8d5"
         },
         "measurement": {
             "type": "diamond",
-            "fill": "#AFAFAF",
+            "fill": "#eee8d5",
             "label": "M"
         },
         "cx": {

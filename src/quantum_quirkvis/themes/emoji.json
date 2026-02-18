@@ -46,20 +46,20 @@
     },
     "shapes": {
         "gate": {
-            "type": "circle",
-            "radius": 20,
-            "fill": "#d4b6e8",
-            "stroke": "#777777",
-            "stroke_width": 2
+            "type": "emoji",
+            "value": "🔮",
+            "label": ""
         },
         "control_dot": {
-            "type": "circle",
+            "type": "emoji",
+            "value": "🔸",
             "radius": 4,
             "fill": "#555555",
             "stroke": "none"
         },
         "target_plus": {
-            "type": "plus_circle",
+            "type": "emoji",
+            "value": "🙃",
             "radius": 12,
             "fill": "#fafafa",
             "stroke": "#555555",
@@ -73,7 +73,8 @@
             "stroke_width": 1
         },
         "swap_x": {
-            "type": "cross",
+            "type": "emoji",
+            "value": "💥",
             "size": 8,
             "stroke": "#222222",
             "stroke_width": 2
@@ -82,26 +83,31 @@
     "gates": {
         "h": {
             "fill": "#e8b5ca",
-            "label": "H"
+            "value": "🐱",
+            "label": ""
         },
         "x": {
             "fill": "#ffe0e0",
-            "label": "X"
+            "value": "🙃",
+            "label": ""
         },
         "y": {
             "fill": "#e0ffe0",
-            "label": "Y"
+            "value": "🙂‍↔️",
+            "label": ""
         },
         "z": {
             "fill": "#ccccff",
-            "label": "Z"
+            "value": "🙂‍↕️",
+            "label": ""
         },
         "rx": {
             "parametric_mode": "arc",
             "arc_stroke": "#ff6666",
             "arc_stroke_width": 4,
             "arc_radius": 17,
-            "label": "Rx",
+            "value": "🌀",
+            "label": "",
             "fill": "#ffe0e0"
         },
         "ry": {
@@ -109,7 +115,8 @@
             "arc_stroke": "#5eba5e",
             "arc_stroke_width": 4,
             "arc_radius": 17,
-            "label": "Ry",
+            "value": "❄️",
+            "label": "",
             "fill": "#e0ffe0"
         },
         "rz": {
@@ -117,24 +124,29 @@
             "arc_stroke": "#5757fa",
             "arc_stroke_width": 4,
             "arc_radius": 17,
-            "label": "Rz",
+            "value": "🌒",
+            "label": "",
             "fill": "#ccccff"
         },
         "sdg": {
             "fill": "#e8dfb5",
-            "label": "S†"
+            "label": "",
+            "value": "⚽"
         },
         "s": {
             "fill": "#b5e8c0",
-            "label": "S"
+            "label": "",
+            "value": "🏀"
         },
         "tdg": {
             "fill": "#b5e5e8",
-            "label": "T†"
+            "value": "🪩",
+            "label": ""
         },
         "t": {
             "fill": "#beb5e8",
-            "label": "T"
+            "value": "💎",
+            "label": ""
         },
         "p": {
             "parametric_mode": "arc",
@@ -145,9 +157,10 @@
             "fill": "#fdfdfb"
         },
         "measurement": {
-            "type": "diamond",
             "fill": "#AFAFAF",
-            "label": "M"
+            "type": "emoji",
+            "label": "",
+            "value": "📸"
         },
         "cx": {
             "target_shape": "target_plus"

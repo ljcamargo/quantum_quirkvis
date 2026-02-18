@@ -29,6 +29,7 @@ class SVGDrawer:
         moments, depths = self._compute_moments(statements, line_nums)
         
         n_lines = max(line_nums.values()) + 1 if line_nums else 0
+        print("lines", n_lines)
         n_moments = len(moments)
         
         # No fallbacks allowed, these will raise KeyError if missing in theme
@@ -38,8 +39,8 @@ class SVGDrawer:
         padding = self.theme_manager.get_dimension('padding')
         label_offset = self.theme_manager.get_dimension('label_offset')
         
-        width = padding * 2 + n_moments * (gate_width + gate_spacing) + label_offset * 1.5
-        height = n_lines * line_spacing + 2 * padding
+        width = (padding * 2) + (n_moments * (gate_width + gate_spacing)) + (label_offset * 1.5)
+        height = (0.5 * padding) + (n_lines * line_spacing)
         
         svg = ET.Element('svg', {
             'xmlns': 'http://www.w3.org/2000/svg',
@@ -379,7 +380,8 @@ class SVGDrawer:
             text = ET.SubElement(svg, 'text', {
                 'x': str(x), 'y': str(y),
                 'font-size': str(font_size),
-                'text-anchor': 'middle', 'dominant-baseline': 'middle'
+                'text-anchor': 'middle', 
+                'dominant-baseline': 'middle'
             })
             text.text = config['value']
         elif shape_type == 'image':
@@ -426,8 +428,11 @@ class SVGDrawer:
             text_color = self.theme_manager.get_style('text')
             txt = ET.SubElement(svg, 'text', {
                 'x': str(x), 'y': str(y),
-                'fill': text_color, 'font-family': 'sans-serif', 'font-size': '12',
-                'text-anchor': 'middle', 'dominant-baseline': 'middle'
+                'fill': text_color, 
+                'font-family': 'sans-serif', 
+                'font-size': '12',
+                'text-anchor': 'middle', 
+                'dominant-baseline': 'middle',
             })
             txt.text = label
 

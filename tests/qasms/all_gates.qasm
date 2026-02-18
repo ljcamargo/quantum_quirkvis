@@ -12,10 +12,11 @@ t q[2];
 
 barrier q;
 
+tdg q[2];
 cx q[0], q[1];
 ccx q[0], q[1], q[2];
 cz q[1], q[2];
-cz q[2], q[0];
+cy q[2], q[0];
 swap q[0], q[2];
 
 barrier q;
