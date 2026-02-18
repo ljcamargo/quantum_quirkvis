@@ -74,25 +74,37 @@ class SVGDrawer:
             y = padding + line_idx * line_spacing
             self._draw_line(svg, padding + label_offset, y, width - padding, y, wire_config)
 
-        # Draw moments
-        x = padding + label_offset + gate_width/2
+        # Draw moments Phase 1: Vertical Lines
+        gate_width = self.theme_manager.get_dimension('gate_width')
+        gate_spacing = self.theme_manager.get_dimension('gate_spacing')
+        x_start = padding + label_offset + gate_width/2
+        
+        x = x_start
         for moment in moments:
             for stmt in moment:
-                self._draw_statement(svg, stmt, x, line_nums)
+                self._draw_statement(svg, stmt, x, line_nums, phase='lines')
+            x += gate_width + gate_spacing
+
+        # Draw moments Phase 2: Shapes/Gates
+        x = x_start
+        for moment in moments:
+            for stmt in moment:
+                self._draw_statement(svg, stmt, x, line_nums, phase='shapes')
             x += gate_width + gate_spacing
 
         return ET.tostring(svg, encoding='unicode')
 
-    def _draw_statement(self, svg, stmt, x, line_nums):
+    def _draw_statement(self, svg, stmt, x, line_nums, phase='shapes'):
         from openqasm3 import ast
         if isinstance(stmt, ast.QuantumGate):
-            self._draw_gate(svg, stmt, x, line_nums)
+            self._draw_gate(svg, stmt, x, line_nums, phase)
         elif isinstance(stmt, ast.QuantumMeasurementStatement):
-            self._draw_measurement(svg, stmt, x, line_nums)
+            self._draw_measurement(svg, stmt, x, line_nums, phase)
         elif isinstance(stmt, ast.QuantumBarrier):
-            self._draw_barrier(svg, stmt, x, line_nums)
+            if phase == 'lines': # Barrier is a line
+                self._draw_barrier(svg, stmt, x, line_nums)
 
-    def _draw_gate(self, svg, gate, x, line_nums):
+    def _draw_gate(self, svg, gate, x, line_nums, phase='shapes'):
         name = gate.name.name.lower()
         qubits = [self._identifier_to_key(q) for q in gate.qubits]
         lines = [line_nums[q] for q in qubits]
@@ -101,10 +113,21 @@ class SVGDrawer:
         config = self.theme_manager.get_gate_config(name)
         
         if name == "cx" and len(lines) == 2:
-            self._draw_cx(svg, lines[0], lines[1], x)
+            self._draw_cx(svg, lines[0], lines[1], x, phase)
             return
         elif name == "swap" and len(lines) == 2:
-            self._draw_swap(svg, lines[0], lines[1], x)
+            self._draw_swap(svg, lines[0], lines[1], x, phase)
+            return
+
+        if phase == 'lines':
+            if len(lines) > 1:
+                # Generic multi-qubit vertical connection
+                padding = self.theme_manager.get_dimension('padding')
+                line_spacing = self.theme_manager.get_dimension('line_spacing')
+                y_min = padding + min(lines) * line_spacing
+                y_max = padding + max(lines) * line_spacing
+                conn_config = self.theme_manager.get_style('connection_line')
+                self._draw_line(svg, x, y_min, x, y_max, conn_config)
             return
 
         padding = self.theme_manager.get_dimension('padding')
@@ -134,16 +157,18 @@ class SVGDrawer:
             else:
                 self._draw_shape(svg, x, y, config, label=gate_label, params=params)
 
-    def _draw_cx(self, svg, ctrl_line, target_line, x):
+    def _draw_cx(self, svg, ctrl_line, target_line, x, phase='shapes'):
         padding = self.theme_manager.get_dimension('padding')
         line_spacing = self.theme_manager.get_dimension('line_spacing')
         
         y1 = padding + ctrl_line * line_spacing
         y2 = padding + target_line * line_spacing
         
-        # Vertical connection line
-        conn_config = self.theme_manager.get_style('connection_line')
-        self._draw_line(svg, x, y1, x, y2, conn_config)
+        if phase == 'lines':
+            # Vertical connection line
+            conn_config = self.theme_manager.get_style('connection_line')
+            self._draw_line(svg, x, y1, x, y2, conn_config)
+            return
         
         # Control dot
         dot_config = self.theme_manager.get_shape_config('control_dot')
@@ -153,21 +178,23 @@ class SVGDrawer:
         plus_config = self.theme_manager.get_shape_config('target_plus')
         self._draw_shape(svg, x, y2, plus_config)
 
-    def _draw_swap(self, svg, line1, line2, x):
+    def _draw_swap(self, svg, line1, line2, x, phase='shapes'):
         padding = self.theme_manager.get_dimension('padding')
         line_spacing = self.theme_manager.get_dimension('line_spacing')
         
         y1 = padding + line1 * line_spacing
         y2 = padding + line2 * line_spacing
         
-        conn_config = self.theme_manager.get_style('connection_line')
-        self._draw_line(svg, x, y1, x, y2, conn_config)
+        if phase == 'lines':
+            conn_config = self.theme_manager.get_style('connection_line')
+            self._draw_line(svg, x, y1, x, y2, conn_config)
+            return
         
         cross_config = self.theme_manager.get_shape_config('swap_x')
         for y in [y1, y2]:
             self._draw_shape(svg, x, y, cross_config)
 
-    def _draw_measurement(self, svg, stmt, x, line_nums):
+    def _draw_measurement(self, svg, stmt, x, line_nums, phase='shapes'):
         padding = self.theme_manager.get_dimension('padding')
         line_spacing = self.theme_manager.get_dimension('line_spacing')
         
@@ -175,6 +202,25 @@ class SVGDrawer:
         line_idx = line_nums[qubit]
         y = padding + line_idx * line_spacing
         
+        target_key = None
+        if stmt.target:
+            target_key = self._identifier_to_key(stmt.target)
+        else:
+            # Strictly assume classical registry named 'c', index 0
+            if ('c', 0) in line_nums:
+                target_key = ('c', 0)
+            elif ('c', -1) in line_nums:
+                target_key = ('c', -1)
+
+        if phase == 'lines':
+            # Draw connection to classical target
+            if target_key and target_key in line_nums:
+                target_idx = line_nums[target_key]
+                y_target = padding + target_idx * line_spacing
+                conn_config = self.theme_manager.get_style('measurement_line')
+                self._draw_line(svg, x, y, x, y_target, conn_config)
+            return
+
         config = self.theme_manager.get_gate_config('measurement')
         
         gate_label = config.get('label', 'M')
@@ -182,15 +228,6 @@ class SVGDrawer:
             gate_label = config['text']
             
         self._draw_shape(svg, x, y, config, label=gate_label)
-        
-        # Draw connection to classical target
-        if stmt.target:
-            target_key = self._identifier_to_key(stmt.target)
-            if target_key in line_nums:
-                target_idx = line_nums[target_key]
-                y_target = padding + target_idx * line_spacing
-                conn_config = self.theme_manager.get_style('measurement_line')
-                self._draw_line(svg, x, y, x, y_target, conn_config)
 
     def _draw_barrier(self, svg, stmt, x, line_nums):
         padding = self.theme_manager.get_dimension('padding')
@@ -403,19 +440,38 @@ class SVGDrawer:
 
             if isinstance(statement, ast.QuantumGate):
                 qubits = [self._identifier_to_key(q) for q in statement.qubits]
-                target_keys = qubits # simplified for now, pyqasm handles multi-qubit range
-                depth = 1 + max(depths[key] for key in target_keys)
-                for key in target_keys:
+                lines = [line_nums[q] for q in qubits]
+                
+                # Clearance behavior: occupy all lines in the vertical span
+                min_l, max_l = min(lines), max(lines)
+                keys_in_span = [k for k, v in line_nums.items() if min_l <= v <= max_l]
+                
+                depth = 1 + max(depths[key] for key in keys_in_span)
+                for key in keys_in_span:
                     depths[key] = depth
+                    
             elif isinstance(statement, ast.QuantumMeasurementStatement):
                 key = self._identifier_to_key(statement.measure.qubit)
-                depth = 1 + depths[key]
+                
+                target_key = None
                 if statement.target:
                     target_key = self._identifier_to_key(statement.target)
-                    if target_key in depths:
-                        depth = 1 + max(depths[key], depths[target_key])
-                        depths[target_key] = depth
-                depths[key] = depth
+                else:
+                    # Strictly target 'c[0]' or 'c'
+                    if ('c', 0) in line_nums: target_key = ('c', 0)
+                    elif ('c', -1) in line_nums: target_key = ('c', -1)
+
+                if target_key and target_key in line_nums:
+                    l1, l2 = line_nums[key], line_nums[target_key]
+                    min_l, max_l = min(l1, l2), max(l1, l2)
+                    keys_in_span = [k for k, v in line_nums.items() if min_l <= v <= max_l]
+                    
+                    depth = 1 + max(depths[k] for k in keys_in_span)
+                    for k in keys_in_span:
+                        depths[k] = depth
+                else:
+                    depth = 1 + depths[key]
+                    depths[key] = depth
             else:
                 # Skip other statements for now
                 continue
